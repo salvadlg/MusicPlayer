@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import filedialog
 import tkinter.messagebox
 from pygame import mixer
+import time
 
 root = Tk()
 
@@ -10,16 +11,25 @@ root = Tk()
 menubar = Menu(root)
 root.config(menu=menubar)
 
+playlist = []
+
 #Select file from your hard drive
 def browse_file():
     global filename
     filename = filedialog.askopenfilename()
+    add_to_playlist(filename)
+
+def add_to_playlist(f):
+    f = os.path.basename(f)
+    i = 0
+    LB.insert(i, f)
+    playlist.insert(i, filename)
+    i = i + 1
 
 #Create the submenu File
 submenu = Menu(menubar)
 menubar.add_cascade(label="File", menu=submenu)
 submenu.add_command(label = "Open", command = browse_file)
-submenu.add_command(label = "New Playlist")
 
 #Message from about_us window
 def about_us():
@@ -32,28 +42,54 @@ submenu.add_command(label = "About us", command = about_us)
 
 mixer.init()    #initializer of mixer
 
-root.geometry('700x300')    #dimension of the window
+root.geometry('900x300')    #dimension of the window
 root.title("Music Player")  #window title
+
+leftframe = Frame(root)
+leftframe.pack(side = LEFT, padx = 30)
+
+LB = Listbox(leftframe)
+LB.pack()
+
+addbtn = Button(leftframe, text = "+ Add", command = browse_file)
+addbtn.pack(side = LEFT, padx = 20, pady = 10)
+
+delbtn = Button(leftframe, text = "- Del")
+delbtn.pack(pady = 10)
 
 #Function to play music
 def play_music():
-    try:
-        paused  #checks if the 'paused' variable is initilized
-    except NameError:   #if it's not initialized then executes the code
-        try:
-            mixer.music.load(filename)
-            mixer.music.play()
-            statusbar['text'] = 'Playing' + ' ' + os.path.basename(filename)
-        except:
-            tkinter.messagebox.showinfo('File not found','We could not find the file. Please try again.')
-    else:   #if it's initialized then executes the else code
+    global paused
+
+    if paused:
         mixer.music.unpause()
         statusbar['text'] = os.path.basename(filename) + ' ' + 'resumed'
-
+        paused = FALSE
+    else:
+        try:
+            stop_music()
+            time.sleep(1)
+            selected_song = int(LB.curselection()[0])
+            print(selected_song)
+            play_it = playlist[selected_song]
+            mixer.music.load(play_it)
+            mixer.music.play()
+            a = mixer.Sound(play_it)
+            total_length = a.get_length()
+            mins, secs = divmod(total_length,60)
+            mins = round(mins)
+            secs = round(secs)
+            timeformat = '{:02d}:{02d}'.format(mins,secs)
+            statusbar['text'] = 'Playing' + ' ' + os.path.basename(play_it) + timeformat
+        except:
+            tkinter.messagebox.showerror('File not found','We could not find the file. Please try again.')
+        
 #Function to stop music
 def stop_music():
     mixer.music.stop()
     statusbar['text'] = os.path.basename(filename) + ' ' + 'stopped'
+
+paused = FALSE
 
 #Funcion to pause music
 def pause_music():
@@ -69,8 +105,6 @@ def set_vol(val):
 
 def rewind_music():
     play_music()
-
-def forward_music():
 
 muted = FALSE
 
@@ -103,11 +137,6 @@ rewindbtn.pack(side = LEFT, padx = 10)
 playphoto = PhotoImage(file="play.png")
 playbtn = Button(root, image=playphoto, command = play_music)
 playbtn.pack(side = LEFT, padx = 10)
-
-#forward button
-forwardphoto = PhotoImage(file = "fast-forward.png")
-forwardbtn = Button(root, image=forwardphoto, command = forward_music)
-forwardbtn.pack(side = LEFT, padx = 10)
 
 #stop button
 stopphoto = PhotoImage(file = "stop.png")
