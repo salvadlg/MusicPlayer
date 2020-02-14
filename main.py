@@ -7,6 +7,13 @@ import time
 
 root = Tk()
 
+
+#PROGRESS BAR
+#CONFIG FILE PLAYLIST
+#PLAYING MP3
+
+
+
 #Create the menubar
 menubar = Menu(root)
 root.config(menu=menubar)
@@ -20,10 +27,10 @@ def browse_file():
     add_to_playlist(filename)
 
 def add_to_playlist(f):
-    f = os.path.basename(f)
+    fx = os.path.basename(f)
     i = 0
-    LB.insert(i, f)
-    playlist.insert(i, filename)
+    LB.insert(i, fx)
+    playlist.insert(i, f)
     i = i + 1
 
 #Create the submenu File
@@ -51,52 +58,60 @@ leftframe.pack(side = LEFT, padx = 30)
 LB = Listbox(leftframe)
 LB.pack()
 
+#add button from playlist
 addbtn = Button(leftframe, text = "+ Add", command = browse_file)
 addbtn.pack(side = LEFT, padx = 20, pady = 10)
 
-delbtn = Button(leftframe, text = "- Del")
+def del_song():
+    selected_song = int(LB.curselection()[0])
+    LB.delete(selected_song)
+    playlist.pop(selected_song)
+
+#delete button from playlist
+delbtn = Button(leftframe, text = "- Del", command = del_song)
 delbtn.pack(pady = 10)
 
 #Function to play music
 def play_music():
     global paused
+    global current
 
     if paused:
         mixer.music.unpause()
-        statusbar['text'] = os.path.basename(filename) + ' ' + 'resumed'
+        statusbar['text'] = os.path.basename(current) + ' ' + 'resumed'
         paused = FALSE
     else:
         try:
             stop_music()
             time.sleep(1)
             selected_song = int(LB.curselection()[0])
-            print(selected_song)
             play_it = playlist[selected_song]
+            current = play_it
             mixer.music.load(play_it)
             mixer.music.play()
             a = mixer.Sound(play_it)
-            total_length = a.get_length()
-            mins, secs = divmod(total_length,60)
-            mins = round(mins)
-            secs = round(secs)
-            timeformat = '{:02d}:{02d}'.format(mins,secs)
-            statusbar['text'] = 'Playing' + ' ' + os.path.basename(play_it) + timeformat
-        except:
+            statusbar['text'] = 'Playing' + ' ' + os.path.basename(play_it)
+        except IndexError:
             tkinter.messagebox.showerror('File not found','We could not find the file. Please try again.')
         
 #Function to stop music
 def stop_music():
+    global current
     mixer.music.stop()
-    statusbar['text'] = os.path.basename(filename) + ' ' + 'stopped'
+    try:
+        statusbar['text'] = os.path.basename(current) + ' ' + 'stopped'
+    except NameError:
+        pass
 
 paused = FALSE
 
 #Funcion to pause music
 def pause_music():
     global paused
+    global current
     paused = TRUE
     mixer.music.pause()
-    statusbar['text'] = os.path.basename(filename) + ' ' + 'paused'
+    statusbar['text'] = os.path.basename(current) + ' ' + 'paused'
 
 #Function to set volume 
 def set_vol(val):
